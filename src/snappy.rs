@@ -10,9 +10,7 @@ pub fn snappy_encode(item: Bytes) -> Result<BytesMut, snap::Error> {
     let mut compressed = BytesMut::zeroed(1 + snap::raw::max_compress_len(item.len() - 1));
     let compressed_size = encoder
         .compress(&item[1..], &mut compressed[1..])
-        .map_err(|err| {
-            err
-        })?;
+        .map_err(|err| err)?;
 
     compressed.truncate(compressed_size + 1);
     compressed[0] = item[0] + MAX_RESERVED_MESSAGE_ID + 1;
@@ -26,8 +24,6 @@ pub fn snappy_decode(bytes: &[u8]) -> Result<BytesMut, snap::Error> {
     let mut decompress_buf = BytesMut::zeroed(decompressed_len + 1);
     decoder
         .decompress(&bytes[1..], &mut decompress_buf[1..])
-        .map_err(|err| {
-            err
-        })?;
+        .map_err(|err| err)?;
     Ok(decompress_buf)
 }

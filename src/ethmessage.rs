@@ -1,15 +1,18 @@
 use core::fmt;
-use std::fmt::Display;
 use std::fmt::Debug;
+use std::fmt::Display;
 
-use alloy_primitives::{U256, B256, hex};
-use alloy_rlp::{Encodable, Decodable, RlpDecodable, RlpEncodable, RlpMaxEncodedLen, RlpEncodableWrapper, RlpDecodableWrapper};
-use bytes::{BufMut, Buf};
-use serde::{Deserialize, Serialize};
+use alloy_primitives::{hex, B256, U256};
+use alloy_rlp::{
+    Decodable, Encodable, RlpDecodable, RlpDecodableWrapper, RlpEncodable, RlpEncodableWrapper,
+    RlpMaxEncodedLen,
+};
+use bytes::{Buf, BufMut};
 use crc::*;
+use serde::{Deserialize, Serialize};
 
-use crate::error::EthStreamError;
 use crate::chain::Chain;
+use crate::error::EthStreamError;
 
 pub const MAX_MESSAGE_SIZE: usize = 10 * 1024 * 1024;
 
@@ -68,7 +71,9 @@ pub struct ForkHash(pub [u8; 4]);
 
 impl fmt::Debug for ForkHash {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("ForkHash").field(&hex::encode(&self.0[..])).finish()
+        f.debug_tuple("ForkHash")
+            .field(&hex::encode(&self.0[..]))
+            .finish()
     }
 }
 
@@ -164,7 +169,7 @@ pub enum EthMessage {
 impl EthMessage {
     pub fn message_id(&self) -> EthMessageID {
         match self {
-            EthMessage::Status(_) => EthMessageID::Status
+            EthMessage::Status(_) => EthMessageID::Status,
         }
     }
 }
@@ -172,12 +177,12 @@ impl EthMessage {
 impl Encodable for EthMessage {
     fn encode(&self, out: &mut dyn BufMut) {
         match self {
-            EthMessage::Status(status) => status.encode(out)
+            EthMessage::Status(status) => status.encode(out),
         }
     }
     fn length(&self) -> usize {
         match self {
-            EthMessage::Status(status) => status.length()
+            EthMessage::Status(status) => status.length(),
         }
     }
 }
@@ -196,7 +201,10 @@ impl ProtocolMessage {
         let message = match message_type {
             EthMessageID::Status => EthMessage::Status(Status::decode(buf)?),
         };
-        Ok(ProtocolMessage { message_type, message })
+        Ok(ProtocolMessage {
+            message_type,
+            message,
+        })
     }
 }
 
@@ -212,6 +220,9 @@ impl Encodable for ProtocolMessage {
 
 impl From<EthMessage> for ProtocolMessage {
     fn from(message: EthMessage) -> Self {
-        ProtocolMessage { message_type: message.message_id(), message }
+        ProtocolMessage {
+            message_type: message.message_id(),
+            message,
+        }
     }
 }

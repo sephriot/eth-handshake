@@ -1,9 +1,10 @@
-use std::{net::{IpAddr, SocketAddr}, io};
+use std::{
+    io,
+    net::{IpAddr, SocketAddr},
+};
 
-use alloy_rlp::{BytesMut, BufMut};
-use tokio::{net::TcpStream, io::AsyncWriteExt};
-
-
+use alloy_rlp::{BufMut, BytesMut};
+use tokio::{io::AsyncWriteExt, net::TcpStream};
 
 pub struct TcpStreamHandler {
     pub stream: TcpStream,
@@ -13,9 +14,7 @@ impl TcpStreamHandler {
     pub async fn new(ip_addr: IpAddr, port: u16) -> Self {
         let addr: SocketAddr = SocketAddr::new(ip_addr, port);
         let stream = TcpStream::connect(addr).await.unwrap();
-        Self {
-            stream
-        }
+        Self { stream }
     }
 
     pub async fn write(&mut self, data: &BytesMut) -> Result<(), std::io::Error> {
@@ -45,7 +44,7 @@ impl TcpStreamHandler {
             match self.stream.try_read(&mut buf) {
                 Ok(0) => {
                     println!("Read 0, break");
-                    break
+                    break;
                 }
                 Ok(n) => {
                     println!("read {} bytes", n);
@@ -61,6 +60,6 @@ impl TcpStreamHandler {
                 }
             }
         }
-        return Ok(data)
+        return Ok(data);
     }
 }

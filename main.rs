@@ -1,4 +1,4 @@
-use alloy_rlp::{Encodable, Decodable};
+use alloy_rlp::{Decodable, Encodable};
 use bytes::BytesMut;
 
 use rs_handshake::ecies::ECIES;
@@ -12,7 +12,6 @@ use std::error::Error;
 use std::net::{IpAddr, Ipv4Addr};
 use std::thread::sleep;
 use std::time::Duration;
-
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -43,9 +42,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     ecies.read_header(&mut hello_message)?;
     println!("Reading Body");
     let mut raw_server_msg = ecies.read_body(&mut hello_message[ECIES::header_len()..])?;
-    
-    let server_hello : P2PMessage = P2PMessage::decode(&mut &raw_server_msg[..])?;
-    
+
+    let server_hello: P2PMessage = P2PMessage::decode(&mut &raw_server_msg[..])?;
+
     // let mut my_hello : HelloMessage;
     // if let P2PMessage::Hello(server_hello) = server_hello {
     //     println!("{:?}", server_hello);
@@ -59,7 +58,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut my_hello = my_hello_raw.unwrap();
     println!("{:?}", my_hello);
     my_hello.id = ecies.peer_id();
-    
+
     // let protocols = vec![EthVersion::Eth67.into()];
     // let mut my_hello = HelloMessageWithProtocols {
     //     protocol_version: ProtocolVersion::V5,
@@ -82,15 +81,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut status_msg = stream_handler.read().await?;
     println!("Status MSG: {:?}", status_msg);
     ecies.read_header(&mut status_msg)?;
-    println!("Reading Body | {:?} | {:?}", ecies.body_len(), status_msg.len());
+    println!(
+        "Reading Body | {:?} | {:?}",
+        ecies.body_len(),
+        status_msg.len()
+    );
     raw_server_msg = ecies.read_body(&mut status_msg[ECIES::header_len()..])?;
     println!("raw_server_msg | {:?} ", raw_server_msg.len());
     // println!("raw_server_msg | {:?} ", hex::encode(raw_server_msg));
     let decoded_raw_msg = snappy_decode(raw_server_msg)?;
 
-    let status_msg = ProtocolMessage::decode_message(&mut decoded_raw_msg.as_ref()).expect("decode error in eth handshake");
+    let status_msg = ProtocolMessage::decode_message(&mut decoded_raw_msg.as_ref())
+        .expect("decode error in eth handshake");
     println!("Server status msg{:?}", status_msg);
-    
+
     let mut my_status_bytes = BytesMut::with_capacity(1 + 88);
     status_msg.encode(&mut my_status_bytes);
     let snappy_encoded_status = snappy_encode(my_status_bytes.freeze())?;

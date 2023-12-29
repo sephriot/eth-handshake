@@ -1,18 +1,19 @@
 use alloy_primitives::{hex, B256, B512};
 use hmac::Hmac;
-use sha2::Sha256;
-use sha2::Digest;
-use secp256k1::{SecretKey, PublicKey};
 use hmac::Mac;
+use secp256k1::{PublicKey, SecretKey};
+use sha2::Digest;
+use sha2::Sha256;
 
 pub fn peer_id_2_public_key(peer_id: &str) -> secp256k1::PublicKey {
     // SECP256K1_TAG_PUBKEY_UNCOMPRESSED = 0x04
     // see: https://github.com/bitcoin-core/secp256k1/blob/master/include/secp256k1.h#L221
-    let decoded_server_peer_id = hex::decode(peer_id).expect("Decoding peer id to hex slice failed");
+    let decoded_server_peer_id =
+        hex::decode(peer_id).expect("Decoding peer id to hex slice failed");
     let mut s: [u8; 65] = [0u8; 65];
     s[0] = 4;
     s[1..].copy_from_slice(decoded_server_peer_id.as_slice());
-    return PublicKey::from_slice(&s).expect("Cannot decode public key from peer id")
+    return PublicKey::from_slice(&s).expect("Cannot decode public key from peer id");
 }
 
 pub fn id2pk(id: B512) -> Result<PublicKey, secp256k1::Error> {
@@ -27,7 +28,6 @@ pub fn id2pk(id: B512) -> Result<PublicKey, secp256k1::Error> {
 pub fn pk2id(pk: &PublicKey) -> B512 {
     B512::from_slice(&pk.serialize_uncompressed()[1..])
 }
-
 
 pub fn sha256(data: &[u8]) -> B256 {
     B256::from(Sha256::digest(data).as_ref())
@@ -51,7 +51,12 @@ pub fn kdf(secret: B256, s1: &[u8], dest: &mut [u8]) {
     let mut written = 0_usize;
     while written < dest.len() {
         let mut hasher = Sha256::default();
-        let ctrs = [(ctr >> 24) as u8, (ctr >> 16) as u8, (ctr >> 8) as u8, ctr as u8];
+        let ctrs = [
+            (ctr >> 24) as u8,
+            (ctr >> 16) as u8,
+            (ctr >> 8) as u8,
+            ctr as u8,
+        ];
         hasher.update(ctrs);
         hasher.update(secret.as_slice());
         hasher.update(s1);

@@ -1,9 +1,9 @@
+pub mod chain;
 pub mod ecies;
-pub mod util;
-pub mod stream;
 pub mod error;
+pub mod ethmessage;
 pub mod mac;
 pub mod p2pmessage;
-pub mod ethmessage;
-pub mod chain;
 pub mod snappy;
+pub mod stream;
+pub mod util;

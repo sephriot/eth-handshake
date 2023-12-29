@@ -227,7 +227,6 @@ impl From<EthVersion> for Protocol {
 }
 
 impl HelloMessageWithProtocols {
-
     #[inline]
     pub fn message(&self) -> HelloMessage {
         HelloMessage {

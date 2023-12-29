@@ -1,5 +1,5 @@
 [package]
-name = "rs-handshake"
+name = "eth-handshake"
 version = "0.1.0"
 edition = "2021"
 
@@ -40,5 +40,5 @@ typenum = "1.17.0"
 byteorder = "1.5.0"
 
 [[bin]]
-name = "rs-handshake"
+name = "eth-handshake"
 path = "main.rs"

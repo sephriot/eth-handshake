@@ -517,6 +517,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "eth-handshake"
+version = "0.1.0"
+dependencies = [
+ "aes",
+ "alloy-primitives",
+ "alloy-rlp",
+ "block-padding",
+ "byteorder",
+ "bytes",
+ "cipher",
+ "crc",
+ "ctr",
+ "digest 0.10.7",
+ "ecies",
+ "generic-array 1.0.0",
+ "hmac",
+ "num_enum",
+ "rand",
+ "regex",
+ "secp256k1",
+ "serde",
+ "sha2",
+ "sha3",
+ "snap",
+ "strum",
+ "thiserror",
+ "tokio",
+ "typenum",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1224,37 +1255,6 @@ checksum = "bb919243f34364b6bd2fc10ef797edbfa75f33c252e7998527479c6d6b47e1ec"
 dependencies = [
  "bytes",
  "rustc-hex",
-]
-
-[[package]]
-name = "rs-handshake"
-version = "0.1.0"
-dependencies = [
- "aes",
- "alloy-primitives",
- "alloy-rlp",
- "block-padding",
- "byteorder",
- "bytes",
- "cipher",
- "crc",
- "ctr",
- "digest 0.10.7",
- "ecies",
- "generic-array 1.0.0",
- "hmac",
- "num_enum",
- "rand",
- "regex",
- "secp256k1",
- "serde",
- "sha2",
- "sha3",
- "snap",
- "strum",
- "thiserror",
- "tokio",
- "typenum",
 ]
 
 [[package]]

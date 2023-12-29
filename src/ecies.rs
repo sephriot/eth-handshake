@@ -1,13 +1,12 @@
 use aes::Aes256;
 use aes::{cipher::StreamCipher, Aes128};
 use alloy_primitives::{B128, B256, B512};
-use alloy_rlp::{Encodable, Rlp, RlpEncodable, RlpMaxEncodedLen};
+use alloy_rlp::{Encodable, Rlp, RlpEncodable};
 use byteorder::{BigEndian, ByteOrder, ReadBytesExt};
 use bytes::{BufMut, Bytes, BytesMut};
 use ctr::cipher::KeyIvInit;
 use ctr::Ctr64BE;
 use rand::{thread_rng, Rng};
-use secp256k1::ecdsa::{RecoverableSignature, RecoveryId};
 use secp256k1::{PublicKey, SecretKey, SECP256K1};
 use sha3::Digest;
 use sha3::Keccak256;
@@ -33,7 +32,6 @@ pub struct ECIES {
     secret_key: SecretKey,
     public_key: PublicKey,
     ephemeral_secret_key: SecretKey,
-    ephemeral_public_key: PublicKey,
 
     ephemeral_shared_secret: Option<B256>,
 
@@ -42,7 +40,6 @@ pub struct ECIES {
 
     nonce: B256,
     remote_nonce: Option<B256>,
-    remote_id: Option<B512>,
 
     init_msg: Option<Bytes>,
     remote_init_msg: Option<Bytes>,
@@ -63,13 +60,11 @@ impl ECIES {
         let ephemeral_secret_key = SecretKey::new(&mut rng);
         let public_key = PublicKey::from_secret_key(SECP256K1, &secret_key);
         let remote_public_key = id2pk(remote_id).unwrap();
-        let ephemeral_public_key = PublicKey::from_secret_key(SECP256K1, &ephemeral_secret_key);
 
         Self {
             secret_key,
             public_key,
             ephemeral_secret_key,
-            ephemeral_public_key,
             nonce,
 
             remote_public_key: Some(remote_public_key),
@@ -78,8 +73,6 @@ impl ECIES {
             ephemeral_shared_secret: None,
             init_msg: None,
             remote_init_msg: None,
-
-            remote_id: Some(remote_id),
 
             body_size: None,
             egress_aes: None,
@@ -91,10 +84,6 @@ impl ECIES {
 
     pub fn peer_id(&self) -> B512 {
         return pk2id(&self.public_key);
-    }
-
-    pub fn remote_id(&self) -> B512 {
-        self.remote_id.unwrap()
     }
 
     pub fn encrypt_message(&self, data: &[u8], out: &mut BytesMut) {
@@ -220,87 +209,6 @@ impl ECIES {
         self.init_msg = Some(Bytes::copy_from_slice(&out));
 
         buf.unsplit(out);
-    }
-
-    pub fn parse_auth_unencrypted(&mut self, data: &[u8]) -> Result<(), ECIESError> {
-        let mut data = Rlp::new(data)?;
-
-        let sigdata = data
-            .get_next::<[u8; 65]>()?
-            .ok_or(ECIESError::InvalidAuthData)?;
-        let signature = RecoverableSignature::from_compact(
-            &sigdata[..64],
-            RecoveryId::from_i32(sigdata[64] as i32)?,
-        )?;
-        let remote_id = data.get_next()?.ok_or(ECIESError::InvalidAuthData)?;
-        self.remote_id = Some(remote_id);
-        self.remote_public_key = Some(id2pk(remote_id)?);
-        self.remote_nonce = Some(data.get_next()?.ok_or(ECIESError::InvalidAuthData)?);
-
-        let x = ecdh_x(&self.remote_public_key.unwrap(), &self.secret_key);
-        self.remote_ephemeral_public_key = Some(
-            SECP256K1.recover_ecdsa(
-                &secp256k1::Message::from_digest_slice((x ^ self.remote_nonce.unwrap()).as_ref())
-                    .unwrap(),
-                &signature,
-            )?,
-        );
-        self.ephemeral_shared_secret = Some(ecdh_x(
-            &self.remote_ephemeral_public_key.unwrap(),
-            &self.ephemeral_secret_key,
-        ));
-
-        Ok(())
-    }
-
-    pub fn read_auth(&mut self, data: &mut [u8]) -> Result<(), ECIESError> {
-        self.remote_init_msg = Some(Bytes::copy_from_slice(data));
-        let unencrypted = self.decrypt_message(data)?;
-        self.parse_auth_unencrypted(unencrypted)
-    }
-
-    pub fn create_ack_unencrypted(&self) -> impl AsRef<[u8]> {
-        #[derive(RlpEncodable, RlpMaxEncodedLen)]
-        struct S {
-            id: B512,
-            nonce: B256,
-            protocol_version: u8,
-        }
-
-        alloy_rlp::encode_fixed_size(&S {
-            id: pk2id(&self.ephemeral_public_key),
-            nonce: self.nonce,
-            protocol_version: PROTOCOL_VERSION as u8,
-        })
-    }
-
-    pub fn create_ack(&mut self) -> BytesMut {
-        let mut buf = BytesMut::new();
-        self.write_ack(&mut buf);
-        buf
-    }
-
-    pub fn write_ack(&mut self, out: &mut BytesMut) {
-        let unencrypted = self.create_ack_unencrypted();
-
-        let mut buf = out.split_off(out.len());
-
-        // reserve space for length
-        buf.put_u16(0);
-
-        // encrypt and append
-        let mut encrypted = buf.split_off(buf.len());
-        self.encrypt_message(unencrypted.as_ref(), &mut encrypted);
-        let len_bytes = u16::try_from(encrypted.len()).unwrap().to_be_bytes();
-        buf.unsplit(encrypted);
-
-        // write length
-        buf[..len_bytes.len()].copy_from_slice(&len_bytes[..]);
-
-        self.init_msg = Some(buf.clone().freeze());
-        out.unsplit(buf);
-
-        self.setup_frame(true);
     }
 
     pub fn parse_ack_unencrypted(&mut self, data: &[u8]) -> Result<(), ECIESError> {

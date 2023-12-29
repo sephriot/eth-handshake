@@ -63,34 +63,6 @@ impl Capability {
     pub const fn eth(version: EthVersion) -> Self {
         Self::new_static("eth", version as usize)
     }
-
-    pub const fn eth_66() -> Self {
-        Self::eth(EthVersion::Eth66)
-    }
-
-    pub const fn eth_67() -> Self {
-        Self::eth(EthVersion::Eth67)
-    }
-
-    pub const fn eth_68() -> Self {
-        Self::eth(EthVersion::Eth68)
-    }
-
-    pub fn is_eth_v66(&self) -> bool {
-        self.name == "eth" && self.version == 66
-    }
-
-    pub fn is_eth_v67(&self) -> bool {
-        self.name == "eth" && self.version == 67
-    }
-
-    pub fn is_eth_v68(&self) -> bool {
-        self.name == "eth" && self.version == 68
-    }
-
-    pub fn is_eth(&self) -> bool {
-        self.is_eth_v66() || self.is_eth_v67() || self.is_eth_v68()
-    }
 }
 
 impl fmt::Display for Capability {
@@ -116,8 +88,6 @@ pub enum EthVersion {
 }
 
 impl EthVersion {
-    pub const LATEST: EthVersion = EthVersion::Eth68;
-
     pub const fn total_messages(&self) -> u8 {
         match self {
             EthVersion::Eth66 => 15,
@@ -133,12 +103,6 @@ impl EthVersion {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EthMessageID {
     Status = 0x00,
-}
-
-impl EthMessageID {
-    pub const fn max() -> u8 {
-        Self::Status as u8
-    }
 }
 
 impl Encodable for EthMessageID {
@@ -187,52 +151,11 @@ impl Protocol {
         let messages = version.total_messages();
         Self::new(cap, messages)
     }
-
-    pub const fn eth_66() -> Self {
-        Self::eth(EthVersion::Eth66)
-    }
-
-    pub const fn eth_67() -> Self {
-        Self::eth(EthVersion::Eth67)
-    }
-
-    pub const fn eth_68() -> Self {
-        Self::eth(EthVersion::Eth68)
-    }
-
-    pub fn messages(&self) -> u8 {
-        if self.cap.is_eth() {
-            return EthMessageID::max() + 1;
-        }
-        self.messages
-    }
 }
 
 impl From<EthVersion> for Protocol {
     fn from(version: EthVersion) -> Self {
         Self::eth(version)
-    }
-}
-
-impl HelloMessageWithProtocols {
-    pub fn message(&self) -> HelloMessage {
-        HelloMessage {
-            protocol_version: self.protocol_version,
-            client_version: self.client_version.clone(),
-            capabilities: self.protocols.iter().map(|p| p.cap.clone()).collect(),
-            port: self.port,
-            id: self.id,
-        }
-    }
-
-    pub fn into_message(self) -> HelloMessage {
-        HelloMessage {
-            protocol_version: self.protocol_version,
-            client_version: self.client_version,
-            capabilities: self.protocols.into_iter().map(|p| p.cap).collect(),
-            port: self.port,
-            id: self.id,
-        }
     }
 }
 

@@ -7,7 +7,6 @@ pub enum ECIESError {
     OutOfBounds { idx: usize, len: usize },
     TagCheckDecryptFailed,
     Secp256k1(secp256k1::Error),
-    InvalidAuthData,
     RLPDecoding(alloy_rlp::Error),
     InvalidAckData,
     TagCheckHeaderFailed,

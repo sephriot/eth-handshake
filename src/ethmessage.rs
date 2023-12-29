@@ -14,8 +14,6 @@ use serde::{Deserialize, Serialize};
 use crate::chain::Chain;
 use crate::error::EthStreamError;
 
-pub const MAX_MESSAGE_SIZE: usize = 10 * 1024 * 1024;
-
 // Minimalistic implementation
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

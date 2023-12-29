@@ -1,25 +1,38 @@
+use std::error::Error;
+use std::net::IpAddr;
+use std::net::Ipv4Addr;
+use std::str::FromStr;
+
 use alloy_primitives::{hex, B256, B512};
 use hmac::Hmac;
 use hmac::Mac;
+use regex::Regex;
 use secp256k1::{PublicKey, SecretKey};
 use sha2::Digest;
 use sha2::Sha256;
 
-pub fn peer_id_2_public_key(peer_id: &str) -> secp256k1::PublicKey {
-    // SECP256K1_TAG_PUBKEY_UNCOMPRESSED = 0x04
-    // see: https://github.com/bitcoin-core/secp256k1/blob/master/include/secp256k1.h#L221
-    let decoded_server_peer_id =
-        hex::decode(peer_id).expect("Decoding peer id to hex slice failed");
-    let mut s: [u8; 65] = [0u8; 65];
-    s[0] = 4;
-    s[1..].copy_from_slice(decoded_server_peer_id.as_slice());
-    return PublicKey::from_slice(&s).expect("Cannot decode public key from peer id");
+// Utility function to extract specific parts from "connection string"
+// e.g. enode://63c310dd920adca1b8682a195557f8ca3ab824b49a9d977003d2c9efbbaec1d4bd3f838ae80676f6349eaea59e8f3db85544f4ecd1a550323f90b6ee55282a18@127.0.0.1:30303
+
+pub fn enode2p2pparams(enode: &str) -> Result<(B512, IpAddr, u16), Box<dyn Error>> {
+    let re = Regex::new(r"enode://([^@]+)@([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+):([0-9]+)").unwrap();
+    let caps = re.captures(enode);
+    match caps {
+        Some(caps) => {
+            let peer_id =
+                B512::from_slice(hex::decode(caps.get(1).map_or("", |m| m.as_str()))?.as_slice());
+            let ip = Ipv4Addr::from_str(caps.get(2).map_or("", |m| m.as_str()))?;
+            let port = caps.get(3).map_or("", |m| m.as_str()).parse::<u16>()?;
+            Ok((peer_id, ip.into(), port))
+        }
+        None => Err("Enode string did not match the pattern".into()),
+    }
 }
 
 pub fn id2pk(id: B512) -> Result<PublicKey, secp256k1::Error> {
     let mut s = [0u8; 65];
     // SECP256K1_TAG_PUBKEY_UNCOMPRESSED = 0x04
-    // see: https://github.com/bitcoin-core/secp256k1/blob/master/include/secp256k1.h#L211
+    // see: https://github.com/bitcoin-core/secp256k1/blob/master/include/secp256k1.h#L221
     s[0] = 4;
     s[1..].copy_from_slice(id.as_slice());
     PublicKey::from_slice(&s)
@@ -64,5 +77,22 @@ pub fn kdf(secret: B256, s1: &[u8], dest: &mut [u8]) {
         dest[written..(written + 32)].copy_from_slice(&d);
         written += 32;
         ctr += 1;
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::net::Ipv4Addr;
+
+    use super::enode2p2pparams;
+
+    #[test]
+    fn test_enode() {
+        let enode = "enode://63c310dd920adca1b8682a195557f8ca3ab824b49a9d977003d2c9efbbaec1d4bd3f838ae80676f6349eaea59e8f3db85544f4ecd1a550323f90b6ee55282a18@127.0.0.1:30303";
+        let res = enode2p2pparams(enode);
+        assert!(!res.is_err());
+        let (_, ip_addr, port) = res.unwrap();
+        assert_eq!(port, 30303);
+        assert_eq!(ip_addr, Ipv4Addr::new(127, 0, 0, 1));
     }
 }

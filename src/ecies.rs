@@ -438,15 +438,6 @@ impl ECIES {
         32
     }
 
-    pub fn body_len(&self) -> usize {
-        let len = self.body_size.unwrap();
-        (if len % 16 == 0 {
-            len
-        } else {
-            (len / 16 + 1) * 16
-        }) + 16
-    }
-
     pub fn write_body(&mut self, out: &mut BytesMut, data: &[u8]) {
         let len = if data.len() % 16 == 0 {
             data.len()

@@ -53,13 +53,6 @@ pub struct Capability {
 }
 
 impl Capability {
-    pub fn new(name: String, version: usize) -> Self {
-        Self {
-            name: Cow::Owned(name),
-            version,
-        }
-    }
-
     pub const fn new_static(name: &'static str, version: usize) -> Self {
         Self {
             name: Cow::Borrowed(name),
@@ -83,22 +76,18 @@ impl Capability {
         Self::eth(EthVersion::Eth68)
     }
 
-    #[inline]
     pub fn is_eth_v66(&self) -> bool {
         self.name == "eth" && self.version == 66
     }
 
-    #[inline]
     pub fn is_eth_v67(&self) -> bool {
         self.name == "eth" && self.version == 67
     }
 
-    #[inline]
     pub fn is_eth_v68(&self) -> bool {
         self.name == "eth" && self.version == 68
     }
 
-    #[inline]
     pub fn is_eth(&self) -> bool {
         self.is_eth_v66() || self.is_eth_v67() || self.is_eth_v68()
     }
@@ -111,7 +100,6 @@ impl fmt::Display for Capability {
 }
 
 impl From<EthVersion> for Capability {
-    #[inline]
     fn from(value: EthVersion) -> Self {
         Capability::eth(value)
     }
@@ -227,7 +215,6 @@ impl From<EthVersion> for Protocol {
 }
 
 impl HelloMessageWithProtocols {
-    #[inline]
     pub fn message(&self) -> HelloMessage {
         HelloMessage {
             protocol_version: self.protocol_version,

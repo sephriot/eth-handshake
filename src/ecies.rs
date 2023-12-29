@@ -98,7 +98,6 @@ impl ECIES {
     }
 
     pub fn encrypt_message(&self, data: &[u8], out: &mut BytesMut) {
-        println!("encrypt_message | {:?} | {:?}", data, out);
         let mut rng = thread_rng();
 
         out.reserve(secp256k1::constants::UNCOMPRESSED_PUBLIC_KEY_SIZE + 16 + data.len() + 32);
@@ -135,7 +134,6 @@ impl ECIES {
     }
 
     pub fn decrypt_message<'a>(&self, data: &'a mut [u8]) -> Result<&'a mut [u8], ECIESError> {
-        println!("decrypt_message | {:?}", data);
         let (auth_data, encrypted) = split_at_mut(data, 2)?;
         let (pubkey_bytes, encrypted) = split_at_mut(encrypted, 65)?;
         let public_key = PublicKey::from_slice(pubkey_bytes)?;
@@ -206,7 +204,6 @@ impl ECIES {
     }
 
     pub fn write_auth(&mut self, buf: &mut BytesMut) {
-        println!("write_auth | {:?}", buf);
         let unencrypted = self.create_auth_unencrypted();
 
         let mut out = buf.split_off(buf.len());
@@ -257,7 +254,6 @@ impl ECIES {
     }
 
     pub fn read_auth(&mut self, data: &mut [u8]) -> Result<(), ECIESError> {
-        println!("read_auth | {:?}", data);
         self.remote_init_msg = Some(Bytes::copy_from_slice(data));
         let unencrypted = self.decrypt_message(data)?;
         self.parse_auth_unencrypted(unencrypted)
@@ -285,7 +281,6 @@ impl ECIES {
     }
 
     pub fn write_ack(&mut self, out: &mut BytesMut) {
-        println!("write_ack | {:?}", out);
         let unencrypted = self.create_ack_unencrypted();
 
         let mut buf = out.split_off(out.len());
@@ -323,7 +318,6 @@ impl ECIES {
 
     /// Read and verify an ack message from the input data.
     pub fn read_ack(&mut self, data: &mut [u8]) -> Result<(), ECIESError> {
-        println!("read_ack | {:?}", data);
         self.remote_init_msg = Some(Bytes::copy_from_slice(data));
         let unencrypted = self.decrypt_message(data)?;
         self.parse_ack_unencrypted(unencrypted)?;
@@ -332,7 +326,6 @@ impl ECIES {
     }
 
     pub fn setup_frame(&mut self, incoming: bool) {
-        println!("SETUP FRAME {:?}", incoming);
         let mut hasher = Keccak256::new();
         for el in &if incoming {
             [self.nonce, self.remote_nonce.unwrap()]
@@ -416,7 +409,6 @@ impl ECIES {
         out.reserve(ECIES::header_len());
         out.extend_from_slice(&header);
         out.extend_from_slice(tag.as_slice());
-        println!("write_header | {:?}", out);
     }
 
     pub fn read_header(&mut self, data: &mut [u8]) -> Result<usize, ECIESError> {
@@ -472,7 +464,6 @@ impl ECIES {
         let tag = self.egress_mac.as_mut().unwrap().digest();
 
         out.extend_from_slice(tag.as_slice());
-        println!("write_body | {:?}", out);
     }
 
     pub fn read_body<'a>(&mut self, data: &'a mut [u8]) -> Result<&'a mut [u8], ECIESError> {

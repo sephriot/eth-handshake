@@ -195,9 +195,7 @@ pub struct ProtocolMessage {
 
 impl ProtocolMessage {
     pub fn decode_message(buf: &mut &[u8]) -> Result<Self, EthStreamError> {
-        println!("MSG1: {:?}", buf);
         let message_type = EthMessageID::decode(buf)?;
-        println!("MSG2: {:?}", buf);
         let message = match message_type {
             EthMessageID::Status => EthMessage::Status(Status::decode(buf)?),
         };

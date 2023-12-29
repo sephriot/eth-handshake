@@ -26,7 +26,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         TcpStreamHandler::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 30303).await;
     let mut ecies = ECIES::new_client(pk2id(&peer_id_2_public_key(server_peer_id)));
     let auth = ecies.create_auth();
-    println!("Writing auth");
+
     stream_handler.write(&auth).await?;
     println!("Auth written");
     let mut remote_ack = stream_handler.read().await?;
